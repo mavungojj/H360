@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+
+model Entity {
+  id            Int            @id @default(autoincrement())
+  name          String
+  email         String         @unique
+  phone         String?
+  address       String?
+  createdAt     DateTime       @default(now())
+  users         User[]
+  patients      Patient[]
+  appointments  Appointment[]
+  exams         Exam[]
+  subscription  Subscription?
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  entityId     Int
+  entity       Entity        @relation(fields: [entityId], references: [id])
+  name         String
+  email        String        @unique
+  password     String
+  role         String        @default("staff") // admin | doctor | staff
+  createdAt    DateTime      @default(now())
+  appointments Appointment[]
+}
+
+model Patient {
+  id             Int           @id @default(autoincrement())
+  entityId       Int
+  entity         Entity        @relation(fields: [entityId], references: [id])
+  name           String
+  email          String?
+  phone          String?
+  cpf            String?       @unique
+  birthDate      DateTime?
+  gender         String?
+  address        String?
+  medicalHistory String?       @db.Text
+  createdAt      DateTime      @default(now())
+  appointments   Appointment[]
+  exams          Exam[]
+}
+
+model Appointment {
+  id          Int      @id @default(autoincrement())
+  patientId   Int
+  patient     Patient  @relation(fields: [patientId], references: [id])
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  entityId    Int
+  entity      Entity   @relation(fields: [entityId], references: [id])
+  scheduledAt DateTime
+  status      String   @default("scheduled") // scheduled | done | cancelled
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now())
+}
+
+model Exam {
+  id         Int      @id @default(autoincrement())
+  patientId  Int
+  patient    Patient  @relation(fields: [patientId], references: [id])
+  entityId   Int
+  entity     Entity   @relation(fields: [entityId], references: [id])
+  type       String
+  status     String   @default("pending") // pending | done | cancelled
+  result     String?  @db.Text
+  labPartner String?
+  examDate   DateTime?
+  createdAt  DateTime @default(now())
+}
+
+model Subscription {
+  id        Int      @id @default(autoincrement())
+  entityId  Int      @unique
+  entity    Entity   @relation(fields: [entityId], references: [id])
+  plan      String   @default("basic") // basic | pro | enterprise
+  status    String   @default("active") // active | expired | cancelled
+  startDate DateTime @default(now())
+  endDate   DateTime?
+  createdAt DateTime @default(now())
+}
